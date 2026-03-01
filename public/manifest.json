@@ -4,17 +4,19 @@
   "version": "1.0.0",
   "permissions": [
     "tabs",
-    "bookmarks",
-    "storage",
-    "alarms",
-    "contextMenus"
+    "storage"
   ],
   "host_permissions": [
-    "https://api.bitbucket.org/*",
-    "https://bitbucket.org/*"
+    "https://api.bitbucket.org/*"
   ],
   "action": {
-    "default_title": "Open Bitbucket Dashboard"
+    "default_title": "Open Bitbucket PR Watcher",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
   },
   "background": {
     "service_worker": "background.js",

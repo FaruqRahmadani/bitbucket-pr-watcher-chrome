@@ -2,7 +2,7 @@
 
 A modern, production-ready Chrome Extension to monitor your Bitbucket Pull Requests. Stay updated with real-time status checks, dark mode support, and a clean, developer-focused dashboard.
 
-![Bitbucket PR Watcher Dashboard](https://github.com/FaruqRahmadani/bitbucket-pr-watcher-chrome/raw/main/public/vite.svg)
+![Bitbucket PR Watcher Dashboard](https://github.com/FaruqRahmadani/bitbucket-pr-watcher-chrome/raw/main/public/icon.png)
 
 ## Features
 
