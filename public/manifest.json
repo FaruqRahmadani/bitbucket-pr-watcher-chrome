@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Bitbucket PR Watcher",
+  "version": "1.0.0",
+  "permissions": [
+    "tabs",
+    "bookmarks",
+    "storage",
+    "alarms",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://api.bitbucket.org/*",
+    "https://bitbucket.org/*"
+  ],
+  "action": {
+    "default_title": "Open Bitbucket Dashboard"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

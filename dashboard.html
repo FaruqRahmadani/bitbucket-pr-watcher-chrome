@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitbucket PR Watcher</title>
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" id="dynamic-favicon" />
+  <style>
+    :root {
+      /* Light Mode Variables */
+      --bg-color: #f4f5f7;
+      --card-bg: #ffffff;
+      --text-primary: #172b4d;
+      --text-secondary: #6b778c;
+      --accent-color: #0052cc;
+      --accent-hover: #0047b3;
+      --border-color: #ebecf0;
+      --hover-bg: #fafbfc;
+      --shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+
+      /* Status Colors */
+      --status-approved-bg: #e3fcef;
+      --status-approved-text: #006644;
+      --status-changes-bg: #ffebe6;
+      --status-changes-text: #de350b;
+      --status-pending-bg: #deebff;
+      --status-pending-text: #0747a6;
+    }
+
+    [data-theme="dark"] {
+      /* Dark Mode Variables */
+      --bg-color: #1c1c1c;
+      --card-bg: #2c2c2c;
+      --text-primary: #e0e0e0;
+      --text-secondary: #a0a0a0;
+      --accent-color: #4c9aff;
+      --accent-hover: #2684ff;
+      --border-color: #444444;
+      --hover-bg: #383838;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+      /* Status Colors Dark */
+      --status-approved-bg: #06402b;
+      --status-approved-text: #6bffb3;
+      --status-changes-bg: #421812;
+      --status-changes-text: #ff8f73;
+      --status-pending-bg: #0e2b4f;
+      --status-pending-text: #85b8ff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      padding: 40px 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.5px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background-color 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--hover-bg);
+      border-color: var(--text-secondary);
+    }
+
+    .btn:disabled {
+      background-color: var(--border-color);
+      color: var(--text-secondary);
+      cursor: not-allowed;
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      color: var(--text-secondary);
+      transition: color 0.2s, background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--hover-bg);
+      color: var(--text-primary);
+    }
+
+    .btn-icon:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .section {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 0;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-color);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .repo-group {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .repo-group:last-child {
+      border-bottom: none;
+    }
+
+    .repo-header {
+      padding: 12px 24px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      font-size: 13px;
+      background-color: var(--hover-bg);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .pr-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .pr-item {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background-color 0.15s;
+    }
+
+    .pr-item:last-child {
+      border-bottom: none;
+    }
+
+    .pr-item:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .pr-content {
+      flex: 1;
+      min-width: 0;
+      /* Truncate text properly */
+    }
+
+    .pr-title {
+      display: block;
+      text-decoration: none;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pr-title:hover {
+      color: var(--accent-color);
+    }
+
+    .pr-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .author-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      margin-right: 16px;
+      border: 2px solid var(--border-color);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-left: 16px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .status-approved {
+      background-color: var(--status-approved-bg);
+      color: var(--status-approved-text);
+    }
+
+    .status-changes {
+      background-color: var(--status-changes-bg);
+      color: var(--status-changes-text);
+    }
+
+    .status-pending {
+      background-color: var(--status-pending-bg);
+      color: var(--status-pending-text);
+    }
+
+    .loading,
+    .error {
+      text-align: center;
+      padding: 60px;
+      color: var(--text-secondary);
+    }
+
+    .error {
+      color: var(--status-changes-text);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 40px;
+      font-style: italic;
+    }
+
+    /* Skeleton Loading Animation */
+    @keyframes pulse {
+      0% {
+        opacity: 0.6;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+
+      100% {
+        opacity: 0.6;
+      }
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+
+    .skeleton {
+      background-color: var(--border-color);
+      border-radius: 4px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      transform: translateY(20px);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    /* Range Slider Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      cursor: pointer;
+      margin-top: -8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: var(--border-color);
+      border-radius: 2px;
+    }
+
+    input[type=range]:focus {
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>Bitbucket PR Watcher</h1>
+    <div class="controls">
+      <button id="theme-toggle" class="btn-icon" title="Toggle Dark Mode">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <button id="settings" class="btn-icon" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
+      </button>
+      <button id="refresh" class="btn-icon" title="Refresh">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="loading" class="loading">Loading your PRs...</div>
+  <div id="error" class="error" style="display: none;"></div>
+
+  <div id="dashboard-content" style="display: none;">
+    <div class="section">
+      <h2>Needs Your Review</h2>
+      <div id="pending-list"></div>
+    </div>
+
+    <div class="section">
+      <h2>Already Reviewed</h2>
+      <div id="reviewed-list"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Settings</h3>
+        <button id="close-modal" class="close-btn">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Bitbucket Username</label>
+        <input type="text" id="username" placeholder="e.g. faruq.rahmadani" />
+      </div>
+      <div class="form-group">
+        <label for="token">App Password</label>
+        <input type="password" id="token" placeholder="Bitbucket App Password" />
+      </div>
+      <div class="form-group">
+        <label for="refreshInterval">Auto-refresh Interval: <span id="refreshValue"
+            style="color: var(--accent-color); font-weight: bold;">5</span> minutes</label>
+        <input type="range" id="refreshInterval" min="1" max="60" value="5" step="1" />
+        <div
+          style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+          <span>1 min</span>
+          <span>60 min</span>
+        </div>
+      </div>
+
+      <button id="save-settings" class="btn" style="width: 100%;">Save Settings</button>
+      <div id="settings-status" style="margin-top: 16px; text-align: center; font-size: 14px;"></div>
+
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); text-align: center;">
+        <a href="https://github.com/FaruqRahmadani/bitbucket-pr-watcher-chrome" target="_blank"
+          style="display: inline-flex; align-items: center; gap: 8px; color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.2s;">
+          <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
+            </path>
+          </svg>
+          Bitbucket PR Watcher
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/dashboard.ts"></script>
+</body>
+
+</html>
